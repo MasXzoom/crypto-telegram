@@ -31,6 +31,10 @@ Bot Telegram ini dirancang untuk memantau harga mata uang kripto secara real-tim
 
 ## Cara Menjalankan
 
+```
+pip install -r requirements.txt
+```
+
 Setelah konfigurasi selesai, jalankan bot dengan perintah berikut dari terminal: python3 bot.py
 
 Bot akan mulai memantau harga mata uang kripto yang ditentukan dan mengirim notifikasi melalui Telegram sesuai dengan konfigurasi.
