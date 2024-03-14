@@ -14,9 +14,9 @@ TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 CHAT_ID = os.getenv('CHAT_ID')
 CRYPTO_SYMBOLS = os.getenv('CRYPTO_SYMBOLS').split(',')
 API_URL = 'https://api.coingecko.com/api/v3/simple/price?ids={}&vs_currencies=usd'
-ALERT_THRESHOLD = 2  # Persen perubahan untuk notifikasi standar
-MONITORING_INTERVAL = 120  # Interval dalam detik
-PRICES_FILE = 'previous_prices.json'  # File name for storing previous prices
+ALERT_THRESHOLD = 1  # Set threshold to 1% for both increase and decrease
+MONITORING_INTERVAL = 120  # Check every 2 minutes
+PRICES_FILE = 'previous_prices.json'  # Store previous prices here
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
@@ -43,9 +43,8 @@ def save_prices(prices):
 
 def generate_message(symbol, change_percent, current_price):
     direction = "naik" if change_percent > 0 else "turun"
-    change_type = "banyak" if abs(change_percent) >= ALERT_THRESHOLD else "sedikit"
     sign = "+" if change_percent > 0 else ""
-    return f"Harga {symbol.upper()} {direction} {change_type}: {sign}{change_percent:.2f}% menjadi ${current_price}."
+    return f"Harga {symbol.upper()} {direction}: {sign}{change_percent:.2f}% menjadi ${current_price}."
 
 async def check_prices(context: CallbackContext):
     previous_prices = load_prices()
@@ -57,8 +56,8 @@ async def check_prices(context: CallbackContext):
         previous_price = previous_prices.get(symbol, current_price)
         change_percent = (current_price - previous_price) / previous_price * 100 if previous_price else 0
 
-        message = generate_message(symbol, change_percent, current_price)
-        if message:
+        if abs(change_percent) >= ALERT_THRESHOLD:
+            message = generate_message(symbol, change_percent, current_price)
             await context.bot.send_message(chat_id=CHAT_ID, text=message)
         
         previous_prices[symbol] = current_price
