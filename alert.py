@@ -14,9 +14,8 @@ TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 CHAT_ID = os.getenv('CHAT_ID')
 CRYPTO_SYMBOLS = os.getenv('CRYPTO_SYMBOLS').split(',')
 API_URL = 'https://api.coingecko.com/api/v3/simple/price?ids={}&vs_currencies=usd'
-ALERT_THRESHOLD = 1  # Percent change for standard notification
-DRAMATIC_THRESHOLD = 5  # Percent change for dramatic notification
-MONITORING_INTERVAL = 120  # Interval in seconds
+ALERT_THRESHOLD = 2  # Persen perubahan untuk notifikasi standar
+MONITORING_INTERVAL = 120  # Interval dalam detik
 PRICES_FILE = 'previous_prices.json'  # File name for storing previous prices
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -43,15 +42,10 @@ def save_prices(prices):
         json.dump(prices, file)
 
 def generate_message(symbol, change_percent, current_price):
-    prefix = "🔼" if change_percent > 0 else "🔽"
-    if abs(change_percent) >= DRAMATIC_THRESHOLD:
-        msg_type = "Drastis"
-    elif abs(change_percent) >= ALERT_THRESHOLD:
-        msg_type = "Signifikan"
-    else:
-        return None  # No change meeting the threshold
-    
-    return f"{prefix} {symbol.upper()} {msg_type}: {abs(change_percent):.2f}% (${current_price})"
+    direction = "naik" if change_percent > 0 else "turun"
+    change_type = "banyak" if abs(change_percent) >= ALERT_THRESHOLD else "sedikit"
+    sign = "+" if change_percent > 0 else ""
+    return f"Harga {symbol.upper()} {direction} {change_type}: {sign}{change_percent:.2f}% menjadi ${current_price}."
 
 async def check_prices(context: CallbackContext):
     previous_prices = load_prices()
@@ -61,7 +55,7 @@ async def check_prices(context: CallbackContext):
         if current_price is None:
             continue
         previous_price = previous_prices.get(symbol, current_price)
-        change_percent = (current_price - previous_price) / previous_price * 100
+        change_percent = (current_price - previous_price) / previous_price * 100 if previous_price else 0
 
         message = generate_message(symbol, change_percent, current_price)
         if message:
